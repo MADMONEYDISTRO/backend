@@ -16,7 +16,7 @@ const whitelist = {
     // }
     
     // Add your test key here
-    "TEST-KEY-123": {
+    "lucky": {
         hwid: null,
         fingerprint: null,
         bindingMethod: null,
@@ -27,7 +27,7 @@ const whitelist = {
     },
     
     // Add more keys as needed
-    "VIP-JOHN-2024": {
+    "madmoney": {
         hwid: null,
         fingerprint: null,
         bindingMethod: null,
@@ -37,7 +37,7 @@ const whitelist = {
         createdAt: new Date().toISOString()
     },
     
-    "VIP-SARAH-2024": {
+    "lessons": {
         hwid: null,
         fingerprint: null,
         bindingMethod: null,
