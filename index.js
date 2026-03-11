@@ -69,6 +69,19 @@ function simpleHash(str) {
     return Math.abs(hash).toString(16);
 }
 
+// Generate a random license key
+function generateLicenseKey(prefix = 'KEY') {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = prefix + '-';
+    for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+            result += characters.charAt(Math.floor(Math.random() * characters.length));
+        }
+        if (i < 3) result += '-';
+    }
+    return result;
+}
+
 // Main validation endpoint - Your Roblox script will call this
 app.post('/validate', (req, res) => {
     try {
@@ -245,7 +258,46 @@ app.get('/', (req, res) => {
     `);
 });
 
-// STAFF ONLY - Beautiful Admin Panel
+// API endpoint to create new keys (for staff)
+app.post('/create-key', (req, res) => {
+    const { adminKey, note, maxDevices, expires, prefix } = req.body;
+    
+    // Check admin password
+    if (adminKey !== "madmoney072") {
+        return res.json({ success: false, message: "Unauthorized" });
+    }
+    
+    // Generate new key
+    const newKey = generateLicenseKey(prefix || 'VIP');
+    
+    // Add to whitelist
+    whitelist[newKey] = {
+        hwid: null,
+        fingerprint: null,
+        bindingMethod: null,
+        maxDevices: maxDevices || 1,
+        note: note || "New license key",
+        expires: expires || null,
+        createdAt: new Date().toISOString()
+    };
+    
+    // Log the creation
+    usageLog.push({ 
+        key: newKey, 
+        status: 'KEY_CREATED', 
+        time: new Date(),
+        note: note 
+    });
+    
+    res.json({ 
+        success: true, 
+        message: "Key created successfully",
+        key: newKey,
+        details: whitelist[newKey]
+    });
+});
+
+// STAFF ONLY - Beautiful Admin Panel with Key Generation
 app.get('/admin', (req, res) => {
     const password = req.query.password;
     
@@ -396,6 +448,141 @@ app.get('/admin', (req, res) => {
                 .stat-sub {
                     color: #4CAF50;
                     font-size: 13px;
+                }
+                
+                /* Key Generator */
+                .generator-container {
+                    background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+                    border-radius: 15px;
+                    padding: 25px;
+                    border: 1px solid #667eea;
+                    margin-bottom: 30px;
+                }
+                
+                .generator-title {
+                    font-size: 20px;
+                    margin-bottom: 20px;
+                    color: #fff;
+                }
+                
+                .generator-title i {
+                    color: #667eea;
+                    margin-right: 10px;
+                }
+                
+                .generator-form {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 15px;
+                    align-items: end;
+                }
+                
+                .form-group {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+                
+                .form-group label {
+                    color: #888;
+                    font-size: 13px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                }
+                
+                .form-group input, .form-group select {
+                    background: #1a1a1a;
+                    border: 1px solid #444;
+                    padding: 12px 15px;
+                    border-radius: 8px;
+                    color: white;
+                    font-size: 14px;
+                    transition: all 0.2s;
+                }
+                
+                .form-group input:focus, .form-group select:focus {
+                    outline: none;
+                    border-color: #667eea;
+                }
+                
+                .form-group input::placeholder {
+                    color: #666;
+                }
+                
+                .generate-btn {
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    border: none;
+                    padding: 12px 25px;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: transform 0.2s;
+                    height: 45px;
+                }
+                
+                .generate-btn:hover {
+                    transform: translateY(-2px);
+                }
+                
+                .key-result {
+                    margin-top: 20px;
+                    padding: 15px;
+                    background: #1a1a1a;
+                    border-radius: 8px;
+                    display: none;
+                    border: 1px solid #4CAF50;
+                }
+                
+                .key-result.show {
+                    display: block;
+                    animation: slideIn 0.3s ease;
+                }
+                
+                @keyframes slideIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-10px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                
+                .key-display {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    background: #0f0f0f;
+                    padding: 15px;
+                    border-radius: 8px;
+                    margin-top: 10px;
+                }
+                
+                .key-text {
+                    font-family: 'Monaco', monospace;
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: #4CAF50;
+                    letter-spacing: 2px;
+                }
+                
+                .copy-key-btn {
+                    background: #2d2d2d;
+                    color: white;
+                    border: 1px solid #444;
+                    padding: 8px 20px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+                
+                .copy-key-btn:hover {
+                    background: #3d3d3d;
+                    border-color: #667eea;
                 }
                 
                 /* Tables */
@@ -627,6 +814,57 @@ app.get('/admin', (req, res) => {
                     </div>
                 </div>
                 
+                <!-- Key Generator Section -->
+                <div class="generator-container">
+                    <div class="generator-title">
+                        <i>🔑</i> Generate New License Key
+                    </div>
+                    
+                    <div class="generator-form">
+                        <div class="form-group">
+                            <label>Key Prefix</label>
+                            <input type="text" id="keyPrefix" placeholder="VIP" value="VIP">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Max Devices</label>
+                            <select id="maxDevices">
+                                <option value="1">1 Device</option>
+                                <option value="2">2 Devices</option>
+                                <option value="3">3 Devices</option>
+                                <option value="5">5 Devices</option>
+                                <option value="10">10 Devices</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Expiration</label>
+                            <select id="expires">
+                                <option value="">Never Expires</option>
+                                <option value="30">30 Days</option>
+                                <option value="60">60 Days</option>
+                                <option value="90">90 Days</option>
+                                <option value="365">1 Year</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Note (Optional)</label>
+                            <input type="text" id="keyNote" placeholder="e.g., John's key">
+                        </div>
+                        
+                        <button class="generate-btn" onclick="generateKey()">Generate Key</button>
+                    </div>
+                    
+                    <div id="keyResult" class="key-result">
+                        <div style="color: #888; margin-bottom: 5px;">✨ New Key Generated:</div>
+                        <div class="key-display">
+                            <span id="generatedKey" class="key-text">XXXX-XXXX-XXXX</span>
+                            <button class="copy-key-btn" onclick="copyGeneratedKey()">Copy Key</button>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- License Keys Table -->
                 <div class="table-container">
                     <div class="table-header">
@@ -642,6 +880,7 @@ app.get('/admin', (req, res) => {
                                 <th>Method</th>
                                 <th>Device ID</th>
                                 <th>Note</th>
+                                <th>Max Devices</th>
                                 <th>Expires</th>
                             </tr>
                         </thead>
@@ -692,7 +931,8 @@ app.get('/admin', (req, res) => {
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td>${methodBadge}</td>
                 <td>${deviceDisplay}</td>
-                <td style="color: #888;">${data.note}</td>
+                <td style="color: #888;">${data.note || '—'}</td>
+                <td>${data.maxDevices || 1}</td>
                 <td>${expiryDisplay}</td>
             </tr>
         `;
@@ -720,7 +960,7 @@ app.get('/admin', (req, res) => {
             const log = usageLog[i];
             let statusClass = 'status-warning';
             
-            if (log.status.includes('VALID') || log.status.includes('BOUND')) {
+            if (log.status.includes('VALID') || log.status.includes('BOUND') || log.status.includes('CREATED')) {
                 statusClass = 'status-success';
             } else if (log.status.includes('INVALID') || log.status.includes('BLACKLISTED')) {
                 statusClass = 'status-failed';
@@ -745,6 +985,60 @@ app.get('/admin', (req, res) => {
                     <p>HWID Authentication System • Staff Access Only • ${new Date().toLocaleDateString()}</p>
                 </div>
             </div>
+            
+            <script>
+                async function generateKey() {
+                    const prefix = document.getElementById('keyPrefix').value;
+                    const maxDevices = document.getElementById('maxDevices').value;
+                    const expiresOption = document.getElementById('expires').value;
+                    const note = document.getElementById('keyNote').value;
+                    
+                    let expires = null;
+                    if (expiresOption) {
+                        const date = new Date();
+                        date.setDate(date.getDate() + parseInt(expiresOption));
+                        expires = date.toISOString().split('T')[0];
+                    }
+                    
+                    const response = await fetch('/create-key', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            adminKey: 'madmoney072',
+                            prefix: prefix,
+                            maxDevices: parseInt(maxDevices),
+                            expires: expires,
+                            note: note
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        document.getElementById('generatedKey').textContent = result.key;
+                        document.getElementById('keyResult').classList.add('show');
+                        
+                        // Refresh the page after 2 seconds to show new key in table
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        alert('Failed to generate key: ' + result.message);
+                    }
+                }
+                
+                function copyGeneratedKey() {
+                    const keyText = document.getElementById('generatedKey').textContent;
+                    navigator.clipboard.writeText(keyText);
+                    
+                    const btn = event.target;
+                    const originalText = btn.textContent;
+                    btn.textContent = 'Copied!';
+                    setTimeout(() => btn.textContent = originalText, 2000);
+                }
+            </script>
         </body>
         </html>
     `;
