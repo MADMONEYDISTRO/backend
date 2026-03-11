@@ -220,7 +220,7 @@ app.get('/', (req, res) => {
 app.get('/admin', (req, res) => {
     const password = req.query.password;
     
-    if (password !== "YOUR_ADMIN_PASSWORD") {
+    if (password !== "madmoney072") {
         return res.send("Unauthorized - wrong password");
     }
     
