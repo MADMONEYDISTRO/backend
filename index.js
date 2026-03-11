@@ -281,7 +281,7 @@ app.get('/admin', (req, res) => {
 app.post('/reset', (req, res) => {
     const { adminKey, licenseKey } = req.body;
     
-    if (adminKey !== "YOUR_ADMIN_SECRET") {
+    if (adminKey !== "madmoney072") {
         return res.json({ success: false, message: "Unauthorized" });
     }
     
